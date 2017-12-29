@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	app     = kingpin.New("new-year", "The new year mail sender.")
+	app     = kingpin.New("new-year-sender", "The new year email sender.")
 	source  = app.Flag("source", "source yaml file.").File()
 	verbose = app.Flag("verbose", "verbose output for debug.").Bool()
 	test    = app.Flag("test", "test source file").Bool()
