@@ -1,0 +1,33 @@
+apikey: Your API key of SendGrid
+
+from:
+  address: your-address@example.com
+  name: your name
+
+date: 2018-01-01 00:00
+
+title: default subject
+
+text: |
+  default contents of an email.
+
+  this will replace if defined another text in the children.
+
+attach:
+  - path-to-file.ext
+
+mails:  # children mails.
+
+  - title: replaced title.
+    to: [to-address@example.com]
+
+  - text: replace text with this.
+    attach: [append-attach-file.ext]
+    mails:  # more override
+      - to: [test@example.com]
+
+      - to: [hoge@example.com]
+        cc: [fuga@example.com]
+        bcc: 
+          - foo@example.com
+          - bar@example.com
