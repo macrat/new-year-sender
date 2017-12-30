@@ -30,6 +30,19 @@ func fileCheck(mails Source) (notfounds map[string]struct{}) {
 	return
 }
 
+func textCheck(mails Source) error {
+	count := 0
+	mails.Walk(nil, func(mail SingleMail) {
+		if len(mail.Text) == 0 {
+			count += 1
+		}
+	})
+	if count > 0 {
+		return fmt.Errorf("text can't be empty: there is %d empty mails.", count)
+	}
+	return nil
+}
+
 func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -65,6 +78,9 @@ func main() {
 		for x, _ := range fileCheck(data) {
 			logrus.Warnf("file notfound: %s", x)
 		}
+		if err = textCheck(data); err != nil {
+			logrus.Error(err.Error())
+		}
 
 		for i, mail := range data.ToSlice() {
 			if i != 0 {
@@ -82,6 +98,10 @@ func main() {
 			fmt.Println(mail.Text)
 		}
 	} else {
+		if err = textCheck(data); err != nil {
+			logrus.Fatal(err.Error())
+		}
+
 		mailer := NewMailer(data.APIKey)
 		mailer.SendAll(data.ToSlice())
 	}
