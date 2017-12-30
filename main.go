@@ -18,6 +18,18 @@ var (
 	test    = app.Flag("test", "test source file").Bool()
 )
 
+func fileCheck(mails Source) (notfounds map[string]struct{}) {
+	notfounds = make(map[string]struct{})
+	mails.Walk(nil, func(mail SingleMail) {
+		for _, fname := range mail.Attach {
+			if f, err := os.Stat(fname); err != nil || !f.Mode().IsRegular() {
+				notfounds[fname] = struct{}{}
+			}
+		}
+	})
+	return
+}
+
 func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -50,6 +62,10 @@ func main() {
 	})
 
 	if *test {
+		for x, _ := range fileCheck(data) {
+			logrus.Warnf("file notfound: %s", x)
+		}
+
 		for i, mail := range data.ToSlice() {
 			if i != 0 {
 				fmt.Println(strings.Repeat("=", 30))
