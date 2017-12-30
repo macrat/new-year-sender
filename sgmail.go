@@ -96,13 +96,13 @@ func SingleMailToSendGrid(source SingleMail) *mail.SGMailV3 {
 
 	ps := mail.NewPersonalization()
 	for _, t := range source.To {
-		ps.AddTos(mail.NewEmail("", t))
+		ps.AddTos(mail.NewEmail(t.Name, t.Address))
 	}
 	for _, c := range source.Cc {
-		ps.AddCCs(mail.NewEmail("", c))
+		ps.AddCCs(mail.NewEmail(c.Name, c.Address))
 	}
 	for _, b := range source.Bcc {
-		ps.AddBCCs(mail.NewEmail("", b))
+		ps.AddBCCs(mail.NewEmail(b.Name, b.Address))
 	}
 	result.AddPersonalizations(ps)
 

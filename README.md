@@ -15,12 +15,10 @@ Make source file like this,
 ``` yaml
 apikey: your-API-key-of-SendGrid
 
-from:
-  address: your-email@example.com
-  name: your name
+from: your name <your-email@example.com>
 
 to:
-  - destination-email@example.com
+  - name <destination-email@example.com>
 
 date: 2018-01-01 00:00  # the date to send email.
 
@@ -51,9 +49,7 @@ for example:
 apikey: your-API-key-of-SendGrid
 
 # common settings
-from:
-  address: your-email@example.com
-  name: your name
+from: your name <your-email@example.com>
 
 date: 2018-01-01 00:00
 
@@ -70,7 +66,7 @@ attach:
 mails:
   - title: hello alice  # override title
     to:
-      - alice@example.com
+      - alice <alice@example.com>
 
   - attach:   # append attach
       - attached-file2.png
@@ -81,14 +77,15 @@ mails:
   # more extend
   - date: 2018-01-01 10:00
 
-    - to:
-        - charie@example.com
-        - dave@example.com
-      cc:
-        - charie2@example.com
+    mails:
+      - to:
+          - charie@example.com
+          - dave@example.com
+        cc:
+          - charie2@example.com
 
-    - to:
-      - eve@example.com
+      - to:
+        - eve <eve@example.com>
 ```
 
 This source will send 4 emails.
@@ -100,9 +97,9 @@ If you want test source, please use `--test` option.
 $ new-year-sender --test < test.yml
 title:  hello alice
 from:  your name <your-email@example.com>
-to: alice@example.com
-cc:
-bcc:
+to: ["alice" <alice@example.com>]
+cc: []
+bcc: []
 date:  2018-01-01 00:00:00 +0900 JST
 Attached: attached-file.png
 
@@ -112,9 +109,9 @@ this is test e-mail!!
 ==============================
 title:  hello
 from:  your name <your-email@example.com>
-to: bob@example.com
-cc:
-bcc:
+to: [<bob@example.com>]
+cc: []
+bcc: []
 date:  2018-01-01 00:00:00 +0900 JST
 Attached: attached-file2.png, attached-file.png
 
@@ -124,9 +121,9 @@ this is test e-mail!!
 ==============================
 title:  hello
 from:  your name <your-email@example.com>
-to: charie@example.com, dave@example.com
-cc: charie2@example.com
-bcc:
+to: [<charie@example.com>, <dave@example.com>]
+cc: [<charie2@example.com>]
+bcc: []
 date:  2018-01-01 10:00:00 +0900 JST
 Attached: attached-file.png
 
@@ -136,9 +133,9 @@ this is test e-mail!!
 ==============================
 title:  hello
 from:  your name <your-email@example.com>
-to: eve@example.com
-cc:
-bcc:
+to: ["eve" <eve@example.com>]
+cc: []
+bcc: []
 date:  2018-01-01 10:00:00 +0900 JST
 Attached: attached-file.png
 

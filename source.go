@@ -2,16 +2,32 @@ package main
 
 import (
 	"fmt"
+	"net/mail"
 	"time"
 )
 
-type SourceFrom struct {
-	Name    string `yaml:"name,omitempty"`
-	Address string `yaml:"address,omitempty"`
+type Address mail.Address
+
+func (addr Address) String() string {
+	return (*mail.Address)(&addr).String()
 }
 
-func (from SourceFrom) String() string {
-	return fmt.Sprintf("%s <%s>", from.Name, from.Address)
+func (addr Address) IsEmpty() bool {
+	return addr.Address == ""
+}
+
+func (addr Address) MarshalText() ([]byte, error) {
+	return []byte(addr.String()), nil
+}
+
+func (addr *Address) UnmarshalText(data []byte) error {
+	if parsed, err := mail.ParseAddress(string(data)); err != nil {
+		return err
+	} else {
+		(*addr).Name = parsed.Name
+		(*addr).Address = parsed.Address
+		return nil
+	}
 }
 
 type DateTime struct {
@@ -33,14 +49,14 @@ func (datetime *DateTime) UnmarshalText(data []byte) (err error) {
 }
 
 type SingleMail struct {
-	Title  string     `yaml:"title,omitempty"`
-	Date   *DateTime  `yaml:"date,omitempty"`
-	Attach []string   `yaml:"attach,omitempty,flow"`
-	Text   string     `yaml:"text,omitempty"`
-	From   SourceFrom `yaml:"from,omitempty"`
-	To     []string   `yaml:"to,omitempty,flow"`
-	Cc     []string   `yaml:"cc,omitempty,flow"`
-	Bcc    []string   `yaml:"bcc,omitempty,flow"`
+	Title  string    `yaml:"title,omitempty"`
+	Date   *DateTime `yaml:"date,omitempty"`
+	Attach []string  `yaml:"attach,omitempty,flow"`
+	Text   string    `yaml:"text,omitempty"`
+	From   Address   `yaml:"from,omitempty"`
+	To     []Address `yaml:"to,omitempty,flow"`
+	Cc     []Address `yaml:"cc,omitempty,flow"`
+	Bcc    []Address `yaml:"bcc,omitempty,flow"`
 }
 
 func (target SingleMail) Override(source SingleMail) SingleMail {
@@ -58,12 +74,8 @@ func (target SingleMail) Override(source SingleMail) SingleMail {
 		source.Text = target.Text
 	}
 
-	if source.From.Name == "" {
-		source.From.Name = target.From.Name
-	}
-
-	if source.From.Address == "" {
-		source.From.Address = target.From.Address
+	if source.From.IsEmpty() {
+		source.From = target.From
 	}
 
 	source.To = append(source.To, target.To...)

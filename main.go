@@ -57,9 +57,9 @@ func main() {
 
 			fmt.Println("title: ", mail.Title)
 			fmt.Println("from: ", mail.From)
-			fmt.Printf("to: %v\n", strings.Join(mail.To, ", "))
-			fmt.Printf("cc: %v\n", strings.Join(mail.Cc, ", "))
-			fmt.Printf("bcc: %v\n", strings.Join(mail.Bcc, ", "))
+			fmt.Printf("to: %v\n", mail.To)
+			fmt.Printf("cc: %v\n", mail.Cc)
+			fmt.Printf("bcc: %v\n", mail.Bcc)
 			fmt.Println("date: ", mail.Date)
 			fmt.Printf("Attached: %v\n", strings.Join(mail.Attach, ", "))
 			fmt.Println()
