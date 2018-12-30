@@ -90,8 +90,12 @@ mails:
 
 This source will send 4 emails.
 
-If you want test source, please use `--test` option.
-`--test` option will print like this when given the above source file. and won't send email.
+If you want test source, please use `--test` or `--dryrun` option.
+`--test` option will validate source and display errors if that exists.
+`--dryrun` option will execute `--test` and display parsed results.
+Won't send emails if enabled either option.
+
+Print like this when given the above source file with `--dryrun` option.
 
 ``` shell
 $ new-year-sender --test < test.yml
