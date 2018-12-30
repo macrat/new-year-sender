@@ -15,7 +15,8 @@ var (
 	app     = kingpin.New("new-year-sender", "The new year email sender.")
 	source  = app.Flag("source", "source yaml file.").File()
 	verbose = app.Flag("verbose", "verbose output for debug.").Bool()
-	test    = app.Flag("test", "test source file").Bool()
+	test    = app.Flag("test", "test source file.").Bool()
+	dryrun  = app.Flag("dryrun", "test source file and display parse results.").Bool()
 )
 
 func fileCheck(mails Source) (notfounds map[string]struct{}) {
@@ -41,6 +42,18 @@ func textCheck(mails Source) error {
 		return fmt.Errorf("text can't be empty: there is %d empty mails.", count)
 	}
 	return nil
+}
+
+func testAll(mails Source) (errored bool) {
+	for x, _ := range fileCheck(mails) {
+		logrus.Errorf("file notfound: %s", x)
+		errored = true
+	}
+	if err := textCheck(mails); err != nil {
+		logrus.Error(err.Error())
+		errored = true
+	}
+	return
 }
 
 func main() {
@@ -74,13 +87,8 @@ func main() {
 		logrus.Info(mail)
 	})
 
-	if *test {
-		for x, _ := range fileCheck(data) {
-			logrus.Warnf("file notfound: %s", x)
-		}
-		if err = textCheck(data); err != nil {
-			logrus.Error(err.Error())
-		}
+	if *dryrun {
+		testAll(data)
 
 		for i, mail := range data.ToSlice() {
 			if i != 0 {
@@ -97,9 +105,11 @@ func main() {
 			fmt.Println()
 			fmt.Println(mail.Text)
 		}
+	} else if *test {
+		testAll(data)
 	} else {
-		if err = textCheck(data); err != nil {
-			logrus.Fatal(err.Error())
+		if testAll(data) {
+			os.Exit(1)
 		}
 
 		mailer := NewMailer(data.APIKey)
