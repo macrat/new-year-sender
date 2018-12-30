@@ -19,41 +19,12 @@ var (
 	dryrun  = app.Flag("dryrun", "test source file and display parse results.").Bool()
 )
 
-func fileCheck(mails Source) (notfounds map[string]struct{}) {
-	notfounds = make(map[string]struct{})
-	mails.Walk(nil, func(mail SingleMail) {
-		for _, fname := range mail.Attach {
-			if f, err := os.Stat(fname); err != nil || !f.Mode().IsRegular() {
-				notfounds[fname] = struct{}{}
-			}
-		}
-	})
-	return
-}
-
-func textCheck(mails Source) error {
-	count := 0
-	mails.Walk(nil, func(mail SingleMail) {
-		if len(mail.Text) == 0 {
-			count += 1
-		}
-	})
-	if count > 0 {
-		return fmt.Errorf("text can't be empty: there is %d empty mails.", count)
+func verify(source Source) (errored bool) {
+	errors := source.Verify()
+	for _, e := range errors {
+		logrus.Error(e.Error())
 	}
-	return nil
-}
-
-func testAll(mails Source) (errored bool) {
-	for x, _ := range fileCheck(mails) {
-		logrus.Errorf("file notfound: %s", x)
-		errored = true
-	}
-	if err := textCheck(mails); err != nil {
-		logrus.Error(err.Error())
-		errored = true
-	}
-	return
+	return len(errors) != 0
 }
 
 func main() {
@@ -88,7 +59,7 @@ func main() {
 	})
 
 	if *dryrun {
-		testAll(data)
+		verify(data)
 
 		for i, mail := range data.ToSlice() {
 			if i != 0 {
@@ -106,9 +77,9 @@ func main() {
 			fmt.Println(mail.Text)
 		}
 	} else if *test {
-		testAll(data)
+		verify(data)
 	} else {
-		if testAll(data) {
+		if verify(data) {
 			os.Exit(1)
 		}
 

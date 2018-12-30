@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/mail"
+	"os"
 	"time"
 )
 
@@ -132,4 +133,42 @@ type Source struct {
 	SourceMails `yaml:",inline"`
 
 	APIKey string `yaml:"apikey"`
+}
+
+func (s Source) VerifyAttach() (errors []error) {
+	notfounds := make(map[string]struct{})
+	s.Walk(nil, func(mail SingleMail) {
+		for _, fname := range mail.Attach {
+			if f, err := os.Stat(fname); err != nil || !f.Mode().IsRegular() {
+				notfounds[fname] = struct{}{}
+			}
+		}
+	})
+	for nf, _ := range notfounds {
+		errors = append(errors, fmt.Errorf("file notfound: %s", nf))
+	}
+	return
+}
+
+func (s Source) VerifyBody() error {
+	count := 0
+	s.Walk(nil, func(mail SingleMail) {
+		if len(mail.Text) == 0 {
+			count += 1
+		}
+	})
+	if count > 0 {
+		return fmt.Errorf("text can't be empty: there is %d empty mails.", count)
+	}
+	return nil
+}
+
+func (s Source) Verify() (errors []error) {
+	errors = append(errors, s.VerifyAttach()...)
+
+	if err := s.VerifyBody(); err != nil {
+		errors = append(errors, err)
+	}
+
+	return
 }
