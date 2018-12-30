@@ -164,25 +164,17 @@ func (s Source) VerifyAttach() (errors []error) {
 	return
 }
 
-func (s Source) VerifyBody() error {
-	count := 0
+func (s Source) VerifyBody() (errors []error) {
 	s.Walk(nil, func(mail SingleMail) {
 		if len(mail.Text) == 0 {
-			count += 1
+			errors = append(errors, fmt.Errorf("the text of the email that to %s is empty; text can't be empty", mail.To))
 		}
 	})
-	if count > 0 {
-		return fmt.Errorf("text can't be empty: there is %d empty mails.", count)
-	}
-	return nil
+	return
 }
 
 func (s Source) Verify() (errors []error) {
 	errors = append(errors, s.VerifyAttach()...)
-
-	if err := s.VerifyBody(); err != nil {
-		errors = append(errors, err)
-	}
-
+	errors = append(errors, s.VerifyBody()...)
 	return
 }
