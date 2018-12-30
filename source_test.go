@@ -3,6 +3,8 @@ package main
 import (
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v2"
 )
 
 func TestDateTime(t *testing.T) {
@@ -58,5 +60,24 @@ func TestAddress(t *testing.T) {
 
 	if !(Address{Name: "fuga"}).IsEmpty() {
 		t.Errorf("IsEmpty: excepted true but got false")
+	}
+}
+
+func TestAddressList(t *testing.T) {
+	al := AddressList{}
+	if err := yaml.Unmarshal([]byte("- hoge@fuga.com\n- foo <bar@baz.com>\n"), &al); err != nil {
+		t.Fatalf("Unmarshal: failed to parse: %s", err.Error())
+	}
+
+	if str := al[0].String(); str != "<hoge@fuga.com>" {
+		t.Errorf("Excepted first email is %#v but got %#v", `<hoge@fuga.com>`, str)
+	}
+
+	if str := al[1].String(); str != `"foo" <bar@baz.com>` {
+		t.Errorf("Excepted first email is %#v but got %#v", `"foo" <bar@baz.com>`, str)
+	}
+
+	if str := al.String(); str != `<hoge@fuga.com>, "foo" <bar@baz.com>` {
+		t.Errorf("Format: excepted %#v but got %#v", `<hoge@fuga.com>, "foo" <bar@baz.com>`, str)
 	}
 }

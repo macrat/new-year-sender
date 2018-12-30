@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/mail"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -31,6 +32,19 @@ func (addr *Address) UnmarshalText(data []byte) error {
 	}
 }
 
+type AddressList []Address
+
+func (list AddressList) StringList() (stringList []string) {
+	for _, a := range list {
+		stringList = append(stringList, a.String())
+	}
+	return
+}
+
+func (list AddressList) String() string {
+	return strings.Join(list.StringList(), ", ")
+}
+
 type DateTime struct {
 	time.Time
 }
@@ -50,14 +64,14 @@ func (datetime *DateTime) UnmarshalText(data []byte) (err error) {
 }
 
 type SingleMail struct {
-	Title  string    `yaml:"title,omitempty"`
-	Date   *DateTime `yaml:"date,omitempty"`
-	Attach []string  `yaml:"attach,omitempty,flow"`
-	Text   string    `yaml:"text,omitempty"`
-	From   Address   `yaml:"from,omitempty"`
-	To     []Address `yaml:"to,omitempty,flow"`
-	Cc     []Address `yaml:"cc,omitempty,flow"`
-	Bcc    []Address `yaml:"bcc,omitempty,flow"`
+	Title  string      `yaml:"title,omitempty"`
+	Date   *DateTime   `yaml:"date,omitempty"`
+	Attach []string    `yaml:"attach,omitempty,flow"`
+	Text   string      `yaml:"text,omitempty"`
+	From   Address     `yaml:"from,omitempty"`
+	To     AddressList `yaml:"to,omitempty,flow"`
+	Cc     AddressList `yaml:"cc,omitempty,flow"`
+	Bcc    AddressList `yaml:"bcc,omitempty,flow"`
 }
 
 func (target SingleMail) Override(source SingleMail) SingleMail {
