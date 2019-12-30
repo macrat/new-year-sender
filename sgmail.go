@@ -83,6 +83,9 @@ func SingleMailToSendGrid(source SingleMail) *mail.SGMailV3 {
 
 	result.Subject = source.Title
 
+	if source.Date == nil {
+		source.Date = NewDateTime()
+	}
 	result.SetHeader("Date", source.Date.RFC822())
 	result.SetSendAt(int(source.Date.Unix()))
 

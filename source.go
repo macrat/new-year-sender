@@ -49,6 +49,10 @@ type DateTime struct {
 	time.Time
 }
 
+func NewDateTime() *DateTime {
+	return &DateTime{time.Now()}
+}
+
 func (datetime DateTime) RFC822() string {
 	return datetime.Format(time.RFC822)
 }
