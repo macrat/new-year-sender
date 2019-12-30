@@ -40,7 +40,7 @@ func main() {
 		logrus.SetLevel(logrus.WarnLevel)
 	}
 
-	logrus.Infof("read source: ", (*source).Name())
+	logrus.Infof("read source: %s", (*source).Name())
 
 	raw, err := ioutil.ReadAll(*source)
 	if err != nil {
