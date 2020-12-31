@@ -74,7 +74,7 @@ func main() {
 			fmt.Println("date: ", mail.Date)
 			fmt.Printf("Attached: %v\n", strings.Join(mail.Attach, ", "))
 			fmt.Println()
-			fmt.Println(mail.Text)
+			fmt.Println(mail.BodyString())
 		}
 	} else if *test {
 		verify(data)

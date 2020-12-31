@@ -72,6 +72,7 @@ type SingleMail struct {
 	Date   *DateTime   `yaml:"date,omitempty"`
 	Attach []string    `yaml:"attach,omitempty,flow"`
 	Text   string      `yaml:"text,omitempty"`
+	Html   string      `yaml:"html,omitempty"`
 	From   Address     `yaml:"from,omitempty"`
 	To     AddressList `yaml:"to,omitempty,flow"`
 	Cc     AddressList `yaml:"cc,omitempty,flow"`
@@ -93,6 +94,10 @@ func (target SingleMail) Override(source SingleMail) SingleMail {
 		source.Text = target.Text
 	}
 
+	if source.Html == "" {
+		source.Html = target.Html
+	}
+
 	if source.From.IsEmpty() {
 		source.From = target.From
 	}
@@ -102,6 +107,19 @@ func (target SingleMail) Override(source SingleMail) SingleMail {
 	source.Bcc = append(source.Bcc, target.Bcc...)
 
 	return source
+}
+
+func (mail SingleMail) BodyString() string {
+	switch {
+	case len(mail.Text) > 0 && len(mail.Html) == 0:
+		return mail.Text
+	case len(mail.Text) == 0 && len(mail.Html) > 0:
+		return mail.Html
+	case len(mail.Text) > 0 && len(mail.Html) > 0:
+		return fmt.Sprintf("%s\n---------------\n%s", mail.Html, mail.Text)
+	default:
+		return ""
+	}
 }
 
 func (mail SingleMail) String() string {
@@ -114,7 +132,7 @@ func (mail SingleMail) String() string {
 		mail.Cc,
 		mail.Bcc,
 		mail.Attach,
-		mail.Text,
+		mail.BodyString(),
 	)
 }
 
@@ -170,8 +188,8 @@ func (s Source) VerifyAttach() (errors []error) {
 
 func (s Source) VerifyBody() (errors []error) {
 	s.Walk(nil, func(mail SingleMail) {
-		if len(mail.Text) == 0 {
-			errors = append(errors, fmt.Errorf("the text of the email that to %s is empty; text can't be empty", mail.To))
+		if len(mail.Text) == 0 && len(mail.Html) == 0 {
+			errors = append(errors, fmt.Errorf("the text and html of the email that to %s is empty; please set least one of text or html", mail.To))
 		}
 	})
 	return

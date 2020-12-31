@@ -29,6 +29,11 @@ text: |
 
   this is test
 
+html: |
+  <p>contents of an <b>email</b>.</p>
+
+  <p>this is test</p>
+
 attach:
   - path/to/file.ext
 ```

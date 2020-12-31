@@ -93,7 +93,13 @@ func SingleMailToSendGrid(source SingleMail) *mail.SGMailV3 {
 		result.AddAttachment(ReadAttachment(fname))
 	}
 
-	result.AddContent(mail.NewContent("text/plain", source.Text))
+
+	if len(source.Text) > 0 {
+		result.AddContent(mail.NewContent("text/plain", source.Text))
+	}
+	if len(source.Html) > 0 {
+		result.AddContent(mail.NewContent("text/html", source.Html))
+	}
 
 	result.SetFrom(mail.NewEmail(source.From.Name, source.From.Address))
 
