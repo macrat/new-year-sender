@@ -81,3 +81,63 @@ func TestAddressList(t *testing.T) {
 		t.Errorf("Format: excepted %#v but got %#v", `<hoge@fuga.com>, "foo" <bar@baz.com>`, str)
 	}
 }
+
+func TestTemplate(t *testing.T) {
+	var tmpl Template
+	if err := yaml.Unmarshal([]byte("Hello! {{.Text}} Best regards,"), &tmpl); err != nil {
+		t.Fatalf("Unmarshal: failed to parse: %s", err.Error())
+	}
+
+	if str := tmpl.String(); str != "Hello! {{.Text}} Best regards," {
+		t.Errorf("Format: excepted %q but got %q", "Hello! {{.Text}} Best regards,", str)
+	}
+
+	if str, err := tmpl.Render(SingleMail{Text: "This is a test."}); err != nil {
+		t.Errorf("Execute: failed to render: %s", err.Error())
+	} else if str != "Hello! This is a test. Best regards," {
+		t.Errorf("Execute: excepted %q but got %q", "Hello! This is a test. Best regards,", str)
+	}
+}
+
+func TestSingleMail_RenderBody(t *testing.T) {
+	var mail SingleMail
+
+	if err := yaml.Unmarshal([]byte(strings.Join([]string{
+		"text_template: |",
+		"  Hello!",
+		"",
+		"  {{.Text}}",
+		"",
+		"  Best regards,",
+		"",
+		"html_template: |",
+		"  <p>Hello!</p>",
+		"  {{.Html}}",
+		"  <p>Best regards,</p>",
+		"",
+		"text: This is a test.",
+		"html: <p>This is a test.</p>",
+	}, "\n")), &mail); err != nil {
+		t.Fatalf("Unmarshal: failed to parse: %s", err.Error())
+	}
+
+	expected := strings.Join([]string{
+		"<p>Hello!</p>",
+		"<p>This is a test.</p>",
+		"<p>Best regards,</p>",
+		"",
+		"---------------",
+		"Hello!",
+		"",
+		"This is a test.",
+		"",
+		"Best regards,",
+		"",
+	}, "\n")
+
+	if str, err := mail.RenderBody(); err != nil {
+		t.Errorf("RenderBody: failed to render: %s", err.Error())
+	} else if str != expected {
+		t.Errorf("RenderBody:\nexcepted %q\n but got %q", expected, str)
+	}
+}

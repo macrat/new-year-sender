@@ -5,6 +5,7 @@ import (
 	"net/mail"
 	"os"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -67,16 +68,45 @@ func (datetime *DateTime) UnmarshalText(data []byte) (err error) {
 	return
 }
 
+type Template struct {
+	raw  string
+	tmpl *template.Template
+}
+
+func (tmpl Template) String() string {
+	return tmpl.raw
+}
+
+func (tmpl Template) Render(mail SingleMail) (string, error) {
+	var result strings.Builder
+	if err := tmpl.tmpl.Execute(&result, mail); err != nil {
+		return "", err
+	}
+	return result.String(), nil
+}
+
+func (tmpl Template) MarshalText() ([]byte, error) {
+	return []byte(tmpl.String()), nil
+}
+
+func (tmpl *Template) UnmarshalText(data []byte) (err error) {
+	tmpl.raw = string(data)
+	tmpl.tmpl, err = template.New("text_template").Parse(tmpl.raw)
+	return
+}
+
 type SingleMail struct {
-	Title  string      `yaml:"title,omitempty"`
-	Date   *DateTime   `yaml:"date,omitempty"`
-	Attach []string    `yaml:"attach,omitempty,flow"`
-	Text   string      `yaml:"text,omitempty"`
-	Html   string      `yaml:"html,omitempty"`
-	From   Address     `yaml:"from,omitempty"`
-	To     AddressList `yaml:"to,omitempty,flow"`
-	Cc     AddressList `yaml:"cc,omitempty,flow"`
-	Bcc    AddressList `yaml:"bcc,omitempty,flow"`
+	Title        string      `yaml:"title,omitempty"`
+	Date         *DateTime   `yaml:"date,omitempty"`
+	Attach       []string    `yaml:"attach,omitempty,flow"`
+	Text         string      `yaml:"text,omitempty"`
+	TextTemplate *Template   `yaml:"text_template,omitempty"`
+	Html         string      `yaml:"html,omitempty"`
+	HtmlTemplate *Template   `yaml:"html_template,omitempty"`
+	From         Address     `yaml:"from,omitempty"`
+	To           AddressList `yaml:"to,omitempty,flow"`
+	Cc           AddressList `yaml:"cc,omitempty,flow"`
+	Bcc          AddressList `yaml:"bcc,omitempty,flow"`
 }
 
 func (target SingleMail) Override(source SingleMail) SingleMail {
@@ -94,8 +124,16 @@ func (target SingleMail) Override(source SingleMail) SingleMail {
 		source.Text = target.Text
 	}
 
+	if source.TextTemplate == nil {
+		source.TextTemplate = target.TextTemplate
+	}
+
 	if source.Html == "" {
 		source.Html = target.Html
+	}
+
+	if source.HtmlTemplate == nil {
+		source.HtmlTemplate = target.HtmlTemplate
 	}
 
 	if source.From.IsEmpty() {
@@ -107,6 +145,41 @@ func (target SingleMail) Override(source SingleMail) SingleMail {
 	source.Bcc = append(source.Bcc, target.Bcc...)
 
 	return source
+}
+
+func (mail SingleMail) RenderText() (string, error) {
+	if mail.TextTemplate == nil {
+		return mail.Text, nil
+	}
+	return mail.TextTemplate.Render(mail)
+}
+
+func (mail SingleMail) RenderHtml() (string, error) {
+	if mail.HtmlTemplate == nil {
+		return mail.Html, nil
+	}
+	return mail.HtmlTemplate.Render(mail)
+}
+
+func (mail SingleMail) RenderBody() (string, error) {
+	switch {
+	case len(mail.Text) > 0 && len(mail.Html) == 0:
+		return mail.RenderText()
+	case len(mail.Text) == 0 && len(mail.Html) > 0:
+		return mail.RenderHtml()
+	case len(mail.Text) > 0 && len(mail.Html) > 0:
+		html, err := mail.RenderHtml()
+		if err != nil {
+			return "", err
+		}
+		text, err := mail.RenderText()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%s\n---------------\n%s", html, text), nil
+	default:
+		return "", nil
+	}
 }
 
 func (mail SingleMail) BodyString() string {
@@ -180,7 +253,7 @@ func (s Source) VerifyAttach() (errors []error) {
 			}
 		}
 	})
-	for nf, _ := range notfounds {
+	for nf := range notfounds {
 		errors = append(errors, fmt.Errorf("file notfound: %s", nf))
 	}
 	return
@@ -190,6 +263,10 @@ func (s Source) VerifyBody() (errors []error) {
 	s.Walk(nil, func(mail SingleMail) {
 		if len(mail.Text) == 0 && len(mail.Html) == 0 {
 			errors = append(errors, fmt.Errorf("the text and html of the email that to %s is empty; please set least one of text or html", mail.To))
+		}
+		_, err := mail.RenderBody()
+		if err != nil {
+			errors = append(errors, err)
 		}
 	})
 	return

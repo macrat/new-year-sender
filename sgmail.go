@@ -33,13 +33,22 @@ func (mailer Mailer) sendSGV3(m *mail.SGMailV3) error {
 }
 
 func (mailer Mailer) Send(m SingleMail) error {
-	return mailer.sendSGV3(SingleMailToSendGrid(m))
+	mail, err := SingleMailToSendGrid(m)
+	if err != nil {
+		return err
+	}
+	return mailer.sendSGV3(mail)
 }
 
 func (mailer Mailer) SendAll(ms []SingleMail) {
-	mails := make([]*mail.SGMailV3, len(ms))
-	for i, m := range ms {
-		mails[i] = SingleMailToSendGrid(m)
+	mails := make([]*mail.SGMailV3, 0, len(ms))
+	for _, m := range ms {
+		mail, err := SingleMailToSendGrid(m)
+		if err != nil {
+			logrus.Errorf("failed to render: %s", err.Error())
+			continue
+		}
+		mails = append(mails, mail)
 	}
 
 	for len(mails) > 0 {
@@ -78,7 +87,7 @@ func ReadAttachment(filename string) *mail.Attachment {
 	return attach
 }
 
-func SingleMailToSendGrid(source SingleMail) *mail.SGMailV3 {
+func SingleMailToSendGrid(source SingleMail) (*mail.SGMailV3, error) {
 	result := mail.NewV3Mail()
 
 	result.Subject = source.Title
@@ -93,12 +102,19 @@ func SingleMailToSendGrid(source SingleMail) *mail.SGMailV3 {
 		result.AddAttachment(ReadAttachment(fname))
 	}
 
-
 	if len(source.Text) > 0 {
-		result.AddContent(mail.NewContent("text/plain", source.Text))
+		text, err := source.RenderText()
+		if err != nil {
+			return nil, err
+		}
+		result.AddContent(mail.NewContent("text/plain", text))
 	}
 	if len(source.Html) > 0 {
-		result.AddContent(mail.NewContent("text/html", source.Html))
+		html, err := source.RenderHtml()
+		if err != nil {
+			return nil, err
+		}
+		result.AddContent(mail.NewContent("text/html", html))
 	}
 
 	result.SetFrom(mail.NewEmail(source.From.Name, source.From.Address))
@@ -115,5 +131,5 @@ func SingleMailToSendGrid(source SingleMail) *mail.SGMailV3 {
 	}
 	result.AddPersonalizations(ps)
 
-	return result
+	return result, nil
 }

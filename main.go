@@ -74,7 +74,8 @@ func main() {
 			fmt.Println("date: ", mail.Date)
 			fmt.Printf("Attached: %v\n", strings.Join(mail.Attach, ", "))
 			fmt.Println()
-			fmt.Println(mail.BodyString())
+			body, _ := mail.RenderBody() // it can ignore error because it is already verified.
+			fmt.Println(body)
 		}
 	} else if *test {
 		verify(data)

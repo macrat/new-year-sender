@@ -151,3 +151,43 @@ Attached: attached-file.png
 hello!
 this is test e-mail!!
 ```
+
+## Apply templates
+Sender supports template for text and HTML body.
+
+for example:
+
+``` yaml
+apikey: your-API-key-of-SendGrid
+
+title: Template example
+
+from: your name <your-email@example.com>
+
+text_template: |
+  Hello!
+
+  {{.Text}}
+
+  Best regards,
+
+html_template: |
+  <body style="background-color: #f0f0f0; color: #000;">
+    <p>Hello!</p>
+    {{.Html}}
+    <p>Best regards,</p>
+  </body>
+
+mails:
+  - to: [alice <alice@example.com>]
+    text:
+      How are you alice?
+    html:
+      <p>How are you <b>alice</b>?</p>
+
+  - to: [bob <bob@example.com>]
+    text:
+      booooooooob
+    html:
+      <p style="font-size:500%">booooooob</p>
+```
